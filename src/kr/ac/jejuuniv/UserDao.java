@@ -8,45 +8,63 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+
 
 public class UserDao {
 
-	private JdbcContext jdbcContext;
+	private JdbcTemplate jdbcTemplate;
 
 	public UserDao(){
 		
 	}
 	
 	public User get(String id) throws ClassNotFoundException, SQLException {
-		return jdbcContext.jdbcContextWithStatementStrategyForQuery(new StatementStrategy() {
-			
-			@Override
-			public PreparedStatement makeStatement(Connection connection)
-					throws SQLException {
-				PreparedStatement preparedStatement;
-				String sql = "select id, name, password from userinfo where id = ?";
-				preparedStatement = connection.prepareStatement(sql);
-				preparedStatement.setString(1, id);
-				return preparedStatement;
-			}
-		});
+		String sql = "select * from userinfo where id = ?";
+		Object[] args = new String[] {id};
+		User queryForObject = null;
+		try {
+			queryForObject = getJdbcTemplate().queryForObject(sql, args, new RowMapper<User>(){
+
+				@Override
+				public User mapRow(ResultSet rs, int rownum) throws SQLException {
+					User user = new User();
+					user.setId(rs.getString("id"));
+					user.setName(rs.getString("name"));
+					user.setPassword(rs.getString("password"));
+					return user;
+				}
+				
+			});
+		} catch (EmptyResultDataAccessException e) {
+
+		}
+		return queryForObject;
 	}
 	
 	public void add(final User user) throws ClassNotFoundException, SQLException {
 		final String query = "insert into userinfo(id,name,password) value(?,?,?)";
 		final String[] params = new String[] {user.getId(), user.getName(), user.getPassword()};
 		
-		jdbcContext.update(query,params);
+		jdbcTemplate.update(query,params);
 	}
 
 	public void delete(final String id) throws SQLException {
 		final String query = "delete from userinfo where id = ?";
 		final String[] params = new String[] {id};
 
-		jdbcContext.update(query, params);
+		jdbcTemplate.update(query, params);
 	}
-	
-	public void setJdbcContext(JdbcContext jdbcContext) {
-		this.jdbcContext = jdbcContext;
+
+	public JdbcTemplate getJdbcTemplate() {
+		return jdbcTemplate;
 	}
+
+	public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+		this.jdbcTemplate = jdbcTemplate;
+	}
+
 }

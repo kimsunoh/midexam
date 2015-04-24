@@ -28,12 +28,10 @@ public class UserDao {
 		User user = null;
 		try {
 			connection = dataSource.getConnection();
-			String sql = "select id, name, password from userinfo where id = ?";
-			preparedStatement = connection.prepareStatement(sql);
-			preparedStatement.setString(1, id);
-			resultSet = preparedStatement.executeQuery();
-			user = new User();
+			StatementStrategy statementStrategy = new GetUserStatementStrategy();
+			preparedStatement = statementStrategy.makeStatement(id, connection);
 
+			resultSet = preparedStatement.executeQuery();
 			if(resultSet.next()){
 				user = new User();
 				user.setId(resultSet.getString("id"));
@@ -71,12 +69,36 @@ public class UserDao {
 		PreparedStatement preparedStatement = null;
 		try {
 			connection = dataSource.getConnection();
-			String sql = "insert into userinfo(id,name,password) value(?,?,?)";
-			preparedStatement = connection.prepareStatement(sql);
+			StatementStrategy statementStrategy = new AddUserStatementStrategy();
+			preparedStatement = statementStrategy.makeStatement(user, connection);
 
-			preparedStatement.setString(1, user.getId());
-			preparedStatement.setString(2, user.getName());
-			preparedStatement.setString(3, user.getPassword());
+			preparedStatement.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw e;
+		} finally {
+			if(preparedStatement != null)
+				try {
+					preparedStatement.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			if(connection != null)
+				try {
+					connection.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+		}
+	}
+
+	public void delete(String id) throws SQLException {
+		Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		try {
+			connection = dataSource.getConnection();
+			StatementStrategy statementStrategy = new DeleteUserStatementStrategy();
+			preparedStatement = statementStrategy.makeStatement(id, connection);
 			
 			preparedStatement.executeUpdate();
 		} catch (SQLException e) {
@@ -97,4 +119,6 @@ public class UserDao {
 				}
 		}
 	}
+
+		
 }

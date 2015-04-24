@@ -9,7 +9,10 @@
 		<property name="username" value="root" />
 		<property name="password" value="Starter" />
 	</bean>
+	<bean id="jdbcContext" class="kr.ac.jejuuniv.JdbcContext">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
 	<bean id="userDao" class="kr.ac.jejuuniv.UserDao">
-		<property name="dataSource" ref="dataSource"/>
+		<property name="jdbcContext" ref="jdbcContext"/>
 	</bean>
 </beans> 

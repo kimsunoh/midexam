@@ -11,114 +11,42 @@ import javax.sql.DataSource;
 
 public class UserDao {
 
-	private DataSource  dataSource;
-	
-	public void setDataSource(DataSource dataSource){
-		this.dataSource = dataSource;
-	}
-	
+	private JdbcContext jdbcContext;
+
 	public UserDao(){
 		
 	}
 	
 	public User get(String id) throws ClassNotFoundException, SQLException {
-		Connection connection = null;
-		PreparedStatement preparedStatement = null;
-		ResultSet resultSet = null;
-		User user = null;
-		try {
-			connection = dataSource.getConnection();
-			StatementStrategy statementStrategy = new GetUserStatementStrategy();
-			preparedStatement = statementStrategy.makeStatement(id, connection);
-
-			resultSet = preparedStatement.executeQuery();
-			if(resultSet.next()){
-				user = new User();
-				user.setId(resultSet.getString("id"));
-				user.setName(resultSet.getString("name"));
-				user.setPassword(resultSet.getString("password"));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}finally {
-			if(resultSet != null)
-				try {
-					resultSet.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			if(preparedStatement != null)
-				try {
-					preparedStatement.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			if(connection != null)
-				try {
-					connection.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-		}
-		return user;
-	}
-
-	
-	public void add(User user) throws ClassNotFoundException, SQLException {
-		Connection connection = null;
-		PreparedStatement preparedStatement = null;
-		try {
-			connection = dataSource.getConnection();
-			StatementStrategy statementStrategy = new AddUserStatementStrategy();
-			preparedStatement = statementStrategy.makeStatement(user, connection);
-
-			preparedStatement.executeUpdate();
-		} catch (SQLException e) {
-			e.printStackTrace();
-			throw e;
-		} finally {
-			if(preparedStatement != null)
-				try {
-					preparedStatement.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			if(connection != null)
-				try {
-					connection.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-		}
-	}
-
-	public void delete(String id) throws SQLException {
-		Connection connection = null;
-		PreparedStatement preparedStatement = null;
-		try {
-			connection = dataSource.getConnection();
-			StatementStrategy statementStrategy = new DeleteUserStatementStrategy();
-			preparedStatement = statementStrategy.makeStatement(id, connection);
+		return jdbcContext.jdbcContextWithStatementStrategyForQuery(new StatementStrategy() {
 			
-			preparedStatement.executeUpdate();
-		} catch (SQLException e) {
-			e.printStackTrace();
-			throw e;
-		} finally {
-			if(preparedStatement != null)
-				try {
-					preparedStatement.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			if(connection != null)
-				try {
-					connection.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-		}
+			@Override
+			public PreparedStatement makeStatement(Connection connection)
+					throws SQLException {
+				PreparedStatement preparedStatement;
+				String sql = "select id, name, password from userinfo where id = ?";
+				preparedStatement = connection.prepareStatement(sql);
+				preparedStatement.setString(1, id);
+				return preparedStatement;
+			}
+		});
+	}
+	
+	public void add(final User user) throws ClassNotFoundException, SQLException {
+		final String query = "insert into userinfo(id,name,password) value(?,?,?)";
+		final String[] params = new String[] {user.getId(), user.getName(), user.getPassword()};
+		
+		jdbcContext.update(query,params);
 	}
 
-		
+	public void delete(final String id) throws SQLException {
+		final String query = "delete from userinfo where id = ?";
+		final String[] params = new String[] {id};
+
+		jdbcContext.update(query, params);
+	}
+	
+	public void setJdbcContext(JdbcContext jdbcContext) {
+		this.jdbcContext = jdbcContext;
+	}
 }

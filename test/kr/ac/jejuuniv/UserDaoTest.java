@@ -17,7 +17,7 @@ public class UserDaoTest {
 	private UserDao userDao;
 
 	@Before
-	public void setup() {
+	 public void setup() {
 		ApplicationContext context = new GenericXmlApplicationContext("daoFactory.xml");
 		userDao = context.getBean("userDao", UserDao.class);
 	}
@@ -33,6 +33,7 @@ public class UserDaoTest {
 		assertEquals(password, user.getPassword());
 	}
 	
+	@Test
 	public void add() throws ClassNotFoundException, SQLException{
 		User user = new User();
 		String id = String.valueOf(new Random().nextInt());
@@ -41,7 +42,6 @@ public class UserDaoTest {
 		user.setId(id);
 		user.setName(name);
 		user.setPassword(password);
-		
 		userDao.add(user);
 		User addedUser = userDao.get(id);
 		assertEquals(id, addedUser.getId());

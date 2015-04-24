@@ -22,37 +22,79 @@ public class UserDao {
 	}
 	
 	public User get(String id) throws ClassNotFoundException, SQLException {
-		Connection connection = this.dataSource.getConnection();
-		String sql = "select id, name, password from userinfo where id = ?";
-		PreparedStatement preparedStatement = connection.prepareStatement(sql);
-		preparedStatement.setString(1, id);
-		ResultSet resultSet = preparedStatement.executeQuery();
-		User user = new User();
-
-		if(resultSet.next()){
+		Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		ResultSet resultSet = null;
+		User user = null;
+		try {
+			connection = dataSource.getConnection();
+			String sql = "select id, name, password from userinfo where id = ?";
+			preparedStatement = connection.prepareStatement(sql);
+			preparedStatement.setString(1, id);
+			resultSet = preparedStatement.executeQuery();
 			user = new User();
-			user.setId(resultSet.getString("id"));
-			user.setName(resultSet.getString("name"));
-			user.setPassword(resultSet.getString("password"));
+
+			if(resultSet.next()){
+				user = new User();
+				user.setId(resultSet.getString("id"));
+				user.setName(resultSet.getString("name"));
+				user.setPassword(resultSet.getString("password"));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}finally {
+			if(resultSet != null)
+				try {
+					resultSet.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			if(preparedStatement != null)
+				try {
+					preparedStatement.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			if(connection != null)
+				try {
+					connection.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 		}
-		resultSet.close();
-		preparedStatement.close();
-		connection.close();
 		return user;
 	}
 
 	
 	public void add(User user) throws ClassNotFoundException, SQLException {
-		Connection connection = dataSource.getConnection();
-		String sql = "insert into userinfo(id,name,password) value(?,?,?)";
-		PreparedStatement preparedStatement = connection.prepareStatement(sql);
+		Connection connection = null;
+		PreparedStatement preparedStatement = null;
+		try {
+			connection = dataSource.getConnection();
+			String sql = "insert into userinfo(id,name,password) value(?,?,?)";
+			preparedStatement = connection.prepareStatement(sql);
 
-		preparedStatement.setString(1, user.getId());
-		preparedStatement.setString(2, user.getName());
-		preparedStatement.setString(3, user.getPassword());
-		preparedStatement.executeUpdate();
-		
-		preparedStatement.close();
-		connection.close();
+			preparedStatement.setString(1, user.getId());
+			preparedStatement.setString(2, user.getName());
+			preparedStatement.setString(3, user.getPassword());
+			
+			preparedStatement.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			throw e;
+		} finally {
+			if(preparedStatement != null)
+				try {
+					preparedStatement.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			if(connection != null)
+				try {
+					connection.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+		}
 	}
 }
